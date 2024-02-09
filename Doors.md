@@ -8,8 +8,8 @@ if game.PlaceId == 6516141723 then
     })
 end
 local VisualsTab = Window:MakeTab({
-        Name = "Visuals",
-        Icon = "rbxassetid://4483345998",
+        Name = "Main",
+        Icon = "rbxassetid://10888331510",
         PremiumOnly = false
 })
 local CF = CFrame.new
@@ -130,7 +130,7 @@ end)
  
 local GameTab = Window:MakeTab({
         Name = "Game",
-        Icon = "rbxassetid://4483345998",
+        Icon = "rbxassetid://10888331510",
         PremiumOnly = false
 })
 local CharTab = Window:MakeTab({
@@ -431,11 +431,10 @@ end)
  
 local CreditsTab = Window:MakeTab({
         Name = "Credits",
-        Icon = "rbxassetid://4483345998",
+        Icon = "rbxassetid://10888331510",
         PremiumOnly = false
-})
- 
-CreditsTab:AddParagraph("By thai bao")
+
+Tab:AddParagraph("by thaibao7444")
  
 coroutine.resume(NotificationCoroutine)
  
