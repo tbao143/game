@@ -428,13 +428,21 @@ local NotificationCoroutine = coroutine.create(function()
 end)
  
 --// ok actual code ends here
+
+
+
+
+
  
 local CreditsTab = Window:MakeTab({
         Name = "Credits",
         Icon = "rbxassetid://10888331510",
         PremiumOnly = false
 })
-Tab:AddParagraph("by thaibao7444")
+
+local Section = Tab:AddSection({
+	Name = "by thaibao7444"
+})
  
 coroutine.resume(NotificationCoroutine)
  
