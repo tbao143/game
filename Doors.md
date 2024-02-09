@@ -1,9 +1,9 @@
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
-local Window = OrionLib:MakeWindow({IntroText = "Doors By Thai Bao v1.2",Name = "Doors - By Thai Bao", HidePremium = false, SaveConfig = true, ConfigFolder = "DoorsSex"})
+local Window = OrionLib:MakeWindow({IntroText = "by thaibao7444 ",Name = "Tbao Hub | Doors", HidePremium = false, SaveConfig = true, ConfigFolder = "DoorsSex"})
 if game.PlaceId == 6516141723 then
     OrionLib:MakeNotification({
-        Name = "Doors",
-        Content = "Doors By Thai Bao.",
+        Name = "Tbao Hub | Doors",
+        Content = "by thaibao7444",
         Time = 2
     })
 end
@@ -135,7 +135,7 @@ local GameTab = Window:MakeTab({
 })
 local CharTab = Window:MakeTab({
         Name = "Character",
-        Icon = "rbxassetid://4483345998",
+        Icon = "rbxassetid://10888331510",
         PremiumOnly = false
 })
  
@@ -433,7 +433,7 @@ local CreditsTab = Window:MakeTab({
         Name = "Credits",
         Icon = "rbxassetid://10888331510",
         PremiumOnly = false
-
+})
 Tab:AddParagraph("by thaibao7444")
  
 coroutine.resume(NotificationCoroutine)
