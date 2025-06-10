@@ -1,0 +1,388 @@
+    
+    
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local EndDecision = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("EndDecision")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local root = character:WaitForChild("HumanoidRootPart")
+
+local autoFarmBond = false
+local CollectBond = false
+local started = false
+local tweenSpeed = 1000
+local currentIndex = 1
+
+local collectDelay = 0.01
+local lastCollectTime = 0
+
+
+local gunCFrame = CFrame.new(
+    350.500061, 50.8906364, -9100.78516,
+    -0.905841053, -0.0674131364, -0.418219507,
+     0.0113797104,  0.983027875, -0.183102921,
+     0.423464984, -0.170621336, -0.889699876
+)
+local rangeMaxGun = 200
+
+
+local bondPoints = {
+    CFrame.new(-475.66, 200.77, 21969.36),
+    CFrame.new(-319.90, 200.77, 14036.94),
+    CFrame.new(-15.96, 200.77, 6099.45),
+    CFrame.new(-615.17, 200.77, -1836.15),
+    CFrame.new(249.76, 200.77, -9067.68),
+    CFrame.new(-138.72, 200.77, -17713.91),
+    CFrame.new(249.76, 200.77, -9067.68),
+    CFrame.new(228.526764, 200.77, 5163.45557),
+    CFrame.new(-860.029114, 200.77, -27428.8184),
+    CFrame.new(10.24, 200.77, -33604.30),
+    CFrame.new(-322.95, 200.77, -41545.23),
+    CFrame.new(-384.791534, 40, -48746.832),
+    CFrame.new(-379.982697, 3, -49471.2695),
+    CFrame.new(-380.45, -23, -49332.89),
+}
+
+
+
+
+
+local function teleportTo(cf)
+    root.Anchored = true
+    root.CFrame = cf
+    task.wait(3)
+    root.Anchored = false
+end
+
+
+local function tweenTo(cf)
+    local distance = (root.Position - cf.Position).Magnitude
+    local duration = distance / tweenSpeed
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(root, tweenInfo, { CFrame = cf })
+
+    local success, err = pcall(function()
+        tween:Play()
+        task.wait(duration)
+    end)
+
+    if not success then
+        warn("Tween error:", err)
+    end
+end
+
+
+local function getLockedGun()
+    local runtime = Workspace:FindFirstChild("RuntimeItems")
+    if not runtime then return nil end
+
+    for _, v in ipairs(runtime:GetChildren()) do
+        if v:IsA("Model") and v.Name == "MaximGun" then
+            local dist = (v:GetPivot().Position - gunCFrame.Position).Magnitude
+            if dist <= rangeMaxGun then
+                return v
+            end
+        end
+    end
+
+    return nil
+end
+
+local function sitInGun()
+    local gun = getLockedGun()
+    local seat = gun and gun:FindFirstChild("VehicleSeat")
+    if seat and seat:IsA("VehicleSeat") then
+        if seat.Disabled then seat.Disabled = false end
+        teleportTo(seat.CFrame + Vector3.new(0, 0, 0))
+        return true
+    end
+    return false
+end
+
+
+local function jumpOff()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end
+
+
+local function freezeMidAir()
+    local freezePos = root.Position + Vector3.new(0, 5, 0)
+    root.Anchored = true
+    root.CFrame = CFrame.new(freezePos)
+    task.wait(1)
+    root.Anchored = false
+end
+
+
+local function tryTweenToBond()
+    local runtime = Workspace:FindFirstChild("RuntimeItems")
+    if runtime then
+        for _, v in ipairs(runtime:GetChildren()) do
+            if v:IsA("Model") and v.Name == "Bond" then
+                local bondPos = v:GetPivot().Position
+                local distance = (root.Position - bondPos).Magnitude
+                if distance <= 100000 then
+                    tweenTo(CFrame.new(bondPos + Vector3.new(0, 4, 0)))
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+
+local function setupGun()
+    teleportTo(gunCFrame)
+    if sitInGun() then
+        task.wait(0.6)
+        jumpOff()
+        freezeMidAir()
+        task.wait(0.5)
+        sitInGun()
+        task.wait(0.1)
+    end
+end
+
+
+RunService.Heartbeat:Connect(function()
+    if CollectBond and tick() - lastCollectTime >= collectDelay then
+        lastCollectTime = tick()
+
+        for _, bond in ipairs(Workspace:GetDescendants()) do
+            if bond:IsA("Model") and bond.Name == "Bond" then
+                local args = { bond }
+                pcall(function()
+                    ReplicatedStorage
+                        :WaitForChild("Shared")
+                        :WaitForChild("Network")
+                        :WaitForChild("RemotePromise")
+                        :WaitForChild("Remotes")
+                        :WaitForChild("C_ActivateObject")
+                        :FireServer(unpack(args))
+                end)
+            end
+        end
+    end
+end)
+
+
+
+
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+
+local CoreGui = game:GetService("CoreGui")
+
+
+pcall(function()
+    for _, v in pairs(CoreGui:GetChildren()) do
+        if v:IsA("ScreenGui") and v.Name == "VxezeHubUI" then
+            v:Destroy()
+        end
+    end
+end)
+
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = CoreGui
+ScreenGui.Name = "VxezeHubUI"
+ScreenGui.IgnoreGuiInset = true
+
+local Frame = Instance.new("Frame")
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(1, 0, 1, 0)
+Frame.Position = UDim2.new(0, 0, 0, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Frame.BackgroundTransparency = 0.3
+Frame.ZIndex = 10
+
+
+local Title = Instance.new("TextLabel")
+Title.Parent = Frame
+Title.Size = UDim2.new(1, 0, 0.2, 0)
+Title.Position = UDim2.new(0, 0, 0.26, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "ZGT Hub"
+Title.TextColor3 = Color3.fromRGB(225, 222, 255)
+Title.TextScaled = true
+Title.Font = Enum.Font.FredokaOne
+Title.ZIndex = 11
+
+
+local ReasonSubtitle = Instance.new("TextLabel")
+ReasonSubtitle.Parent = Frame
+ReasonSubtitle.Size = UDim2.new(1, 0, 0.05, 0)
+ReasonSubtitle.Position = UDim2.new(0, 0, 0.45, 0)
+ReasonSubtitle.BackgroundTransparency = 1
+ReasonSubtitle.Text = "Time: 00:00"
+ReasonSubtitle.Visible = false
+ReasonSubtitle.TextColor3 = Color3.fromRGB(255, 0, 0)
+ReasonSubtitle.TextScaled = true
+ReasonSubtitle.Font = Enum.Font.Gotham
+ReasonSubtitle.ZIndex = 10
+
+local Best = Instance.new("TextLabel")
+Best.Parent = Frame
+Best.Size = UDim2.new(1, 0, 0.05, 0)
+Best.Position = UDim2.new(0, 0, 0.50, 0)
+Best.BackgroundTransparency = 1
+Best.Text = "Auto Farm Boud"
+Best.TextColor3 = Color3.fromRGB(52, 152, 219)
+Best.TextScaled = true
+Best.Font = Enum.Font.Gotham
+Best.ZIndex = 10
+
+local Lol = Instance.new("TextLabel")
+Lol.Parent = Frame
+Lol.Size = UDim2.new(1, 0, 0.05, 0)
+Lol.Position = UDim2.new(0, 0, 0.55, 0)
+Lol.BackgroundTransparency = 1
+Lol.Text = "discord.gg/zgthub"
+Lol.TextColor3 = Color3.fromRGB(52, 152, 219)
+Lol.TextScaled = true
+Lol.Font = Enum.Font.Gotham
+Lol.ZIndex = 10
+
+
+local List = Instance.new("Frame")
+List.Name = "List"
+List.Parent = Frame
+List.AnchorPoint = Vector2.new(0.5, 0.5)
+List.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+List.BackgroundTransparency = 1
+List.BorderColor3 = Color3.fromRGB(0, 0, 0)
+List.BorderSizePixel = 0
+List.Position = UDim2.new(0.5, 0, 0.85, 0)
+List.Size = UDim2.new(0, 250, 0, 50)
+
+
+local function createLogoItem(name, parent, position, imageId)
+    local item = Instance.new("Frame")
+    item.Name = name
+    item.Parent = parent
+    item.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    item.BackgroundTransparency = 1
+    item.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    item.BorderSizePixel = 0
+    item.Position = position
+    item.Size = UDim2.new(0, 48, 0, 50)
+    item.ZIndex = 12 
+
+    
+    local glowFrame = Instance.new("Frame")
+    glowFrame.Parent = item
+    glowFrame.Size = UDim2.new(1, 4, 1, 4) 
+    glowFrame.Position = UDim2.new(0, -2, 0, -2)
+    glowFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    glowFrame.BackgroundTransparency = 0.8
+    glowFrame.ZIndex = 11
+    local glowCorner = Instance.new("UICorner")
+    glowCorner.CornerRadius = UDim.new(1, 0)
+    glowCorner.Parent = glowFrame
+
+    local uicorner = Instance.new("UICorner")
+    uicorner.CornerRadius = UDim.new(1, 0)
+    uicorner.Parent = item
+
+    local uistroke = Instance.new("UIStroke")
+    uistroke.Color = Color3.fromRGB(255, 255, 255) 
+    uistroke.Thickness = 2 
+    uistroke.Parent = item
+
+    
+
+    return item
+end
+
+
+
+local function formatTime(seconds)
+    local mins = math.floor(seconds / 60)
+    local secs = seconds % 60
+    return string.format("%02d:%02d", mins, secs)
+end
+
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if counting then
+            elapsedTime = math.floor(tick() - startTime)
+            ReasonSubtitle.Text = "Time: " .. formatTime(elapsedTime)
+        end
+    end
+end)
+
+autoFarmBond = true
+CollectBond = true
+startTime = tick()
+elapsedTime = 0
+counting = true
+ReasonSubtitle.Text = "Time: 00:00"
+ReasonSubtitle.Visible = true
+ 
+local function finishFarm()
+    autoFarmBond = false
+    CollectBond = false
+    started = false
+    ReasonSubtitle.TextColor3 = Color3.fromRGB(0, 255, 0)
+    counting = false
+
+   
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+
+    doneLabel.Visible = true
+    task.delay(1, function()
+        doneLabel.Visible = false
+        ReasonSubtitle.Visible = false
+    end)
+end
+
+
+local function searchBondPoints()
+    if currentIndex > #bondPoints then
+        finishFarm()
+        return
+    end
+
+    local cf = bondPoints[currentIndex]
+
+    if tryTweenToBond() then
+        return
+    end
+
+    teleportTo(cf)
+    currentIndex += 1
+end
+
+
+task.spawn(function()
+    while task.wait(0.3) do
+        if autoFarmBond and not started then
+            setupGun()
+            started = true
+        elseif autoFarmBond and started then
+            searchBondPoints()
+        end
+    end
+end)
+
+local args = { false }
+
+while true do
+    EndDecision:FireServer(unpack(args))
+    task.wait(0.5)
+end
